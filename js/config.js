@@ -1,92 +1,139 @@
-// Game Configuration
+// Game Configuration for Noxis Town
 const CONFIG = {
-    CANVAS_WIDTH: 800,
-    CANVAS_HEIGHT: 600,
+    // Display settings
+    VIEWPORT_WIDTH: 800,
+    VIEWPORT_HEIGHT: 600,
     TILE_SIZE: 32,
-    PLAYER_SPEED: 2,
+    
+    // World settings
+    WORLD_WIDTH: 1600,  // 50 tiles wide
+    WORLD_HEIGHT: 1600, // 50 tiles tall
+    
+    // Player settings
+    PLAYER_SPEED: 3,
+    PLAYER_SIZE: 16,
+    
+    // NPC settings
+    NPC_SIZE: 16,
+    NPC_WANDER_SPEED: 1,
+    NPC_WANDER_PAUSE: 2000, // ms between movements
+    
+    // Interaction
+    INTERACTION_RANGE: 40,
     
     // Colors (Pokemon GBA palette)
     COLORS: {
+        // Terrain
         GRASS: '#8bac0f',
-        DARK_GRASS: '#306230',
+        DARK_GRASS: '#609048',
         PATH: '#c4c4a0',
-        WALL: '#505040',
+        PATH_EDGE: '#a8a888',
+        
+        // Nature
+        TREE_GREEN: '#306230',
+        TREE_DARK: '#0f380f',
+        TREE_TRUNK: '#785048',
+        
+        // Water
+        WATER: '#4890d0',
+        WATER_DARK: '#3070a8',
+        WATER_LIGHT: '#68b0f0',
+        
+        // Buildings
         ROOF_RED: '#d84848',
         ROOF_DARK: '#a03030',
         BUILDING: '#e8d0a0',
         BUILDING_DARK: '#c0a878',
         DOOR: '#785048',
         WINDOW: '#87ceeb',
-        PLAYER: '#3850b8',
-        NPC: '#e8a048',
-        TEXT: '#0f380f'
+        WALL: '#f8f8e8',
+        
+        // Interior
+        FLOOR_WOOD: '#c89860',
+        FLOOR_LIGHT: '#d8a870',
+        RUG_RED: '#d84848',
+        RUG_DARK: '#a03030',
+        FURNITURE: '#987050',
+        
+        // Entities
+        PLAYER: '#ff0000',        // RED
+        NPC_YELLOW: '#ffff00',    // YELLOW
+        NPC_GREEN: '#00ff00',     // GREEN
+        NPC_ORANGE: '#ff8800',    // ORANGE
+        NPC_BLUE: '#0088ff',      // BLUE
+        
+        // UI
+        TEXT: '#0f380f',
+        SHADOW: 'rgba(0, 0, 0, 0.3)'
     }
 };
 
-// Upgrades available in shop
-const UPGRADES = [
-    {
-        id: 'neuron_1',
-        name: 'Basic Neuron',
-        description: 'A simple neuron that generates thoughts',
-        baseCost: 10,
-        baseIncome: 1,
-        costMultiplier: 1.15,
-        owned: 0
-    },
-    {
-        id: 'synapse_1',
-        name: 'Synapse Network',
-        description: 'Connected neurons work better together',
-        baseCost: 100,
-        baseIncome: 8,
-        costMultiplier: 1.15,
-        owned: 0
-    },
-    {
-        id: 'dendrite_1',
-        name: 'Dendrite Cluster',
-        description: 'Enhanced neural pathways',
-        baseCost: 1100,
-        baseIncome: 47,
-        costMultiplier: 1.14,
-        owned: 0
-    },
-    {
-        id: 'cortex_1',
-        name: 'Cortex Module',
-        description: 'Advanced processing power',
-        baseCost: 12000,
-        baseIncome: 260,
-        costMultiplier: 1.13,
-        owned: 0
-    },
-    {
-        id: 'brain_1',
-        name: 'Mini Brain',
-        description: 'A complete thinking system',
-        baseCost: 130000,
-        baseIncome: 1400,
-        costMultiplier: 1.12,
-        owned: 0
-    }
-];
+// Tile types for collision and rendering
+const TILE_TYPES = {
+    GRASS: 0,
+    PATH: 1,
+    TREE: 2,
+    WATER: 3,
+    BUILDING: 4,
+    DOOR: 5,
+    INTERIOR_FLOOR: 6,
+    INTERIOR_WALL: 7,
+    FURNITURE: 8
+};
+
+// Sprite URLs
+const SPRITES = {
+    NPC_01: 'https://raw.githubusercontent.com/FireSamaLab/BrainrotIncremental/main/Assets/NPC/NPC%2001.png',
+    // Add more sprite URLs here as needed
+    // NPC_02: 'url_here',
+    // NPC_03: 'url_here',
+    // NPC_04: 'url_here',
+};
 
 // NPC Dialogs
-const DIALOGS = {
-    SHOPKEEPER: [
-        "Welcome to the Brain Shop!|I sell neural upgrades that generate money over time.",
-        "The more neurons you have, the more you can think!|And thinking generates money!",
-        "Come back anytime you want to upgrade your brain power!"
-    ],
-    SCIENTIST: [
-        "Did you know?|Your brain has billions of neurons!",
-        "Neural networks are fascinating...|Keep building yours!",
-        "The human brain is the most complex structure in the known universe!"
-    ],
-    HOUSE_KEEPER: [
-        "This is your neural storage facility.|All your upgrades are kept safe here!",
-        "I can feel the brain power emanating from this place!",
-        "Your collection is growing nicely!"
-    ]
+const NPC_DATA = {
+    YELLOW: {
+        name: "Yellow Resident",
+        color: CONFIG.COLORS.NPC_YELLOW,
+        spriteUrl: SPRITES.NPC_01,
+        location: 'house1',
+        dialogs: [
+            "Welcome to Noxis!|This is a peaceful town.",
+            "I love living here.|The air is so fresh!",
+            "Have you explored the whole town yet?"
+        ]
+    },
+    GREEN: {
+        name: "Green Resident",
+        color: CONFIG.COLORS.NPC_GREEN,
+        spriteUrl: null, // Will use colored dot until sprite is provided
+        location: 'house2',
+        dialogs: [
+            "Hello there!|Nice to meet you.",
+            "I'm the Green resident.|I've lived here for years.",
+            "The pond is beautiful this time of year!"
+        ]
+    },
+    ORANGE: {
+        name: "Orange Wanderer",
+        color: CONFIG.COLORS.NPC_ORANGE,
+        spriteUrl: null, // Will use colored dot until sprite is provided
+        location: 'outside',
+        dialogs: [
+            "I like to walk around town.|It helps me think.",
+            "Have you seen the pond?|It's quite relaxing.",
+            "This town has a nice layout, doesn't it?"
+        ]
+    },
+    BLUE: {
+        name: "Blue Wanderer",
+        color: CONFIG.COLORS.NPC_BLUE,
+        spriteUrl: null, // Will use colored dot until sprite is provided
+        location: 'outside',
+        dialogs: [
+            "Hello!|I'm just enjoying the day.",
+            "I love exploring Noxis.|There's always something new to see.",
+            "The trees here are so green and healthy!"
+        ]
+    }
 };

@@ -19,29 +19,30 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Enter' && !startScreen.classList.contains('hidden')) {
             startScreen.classList.add('hidden');
             game.start();
+            e.preventDefault();
         }
     });
 });
 
-// Export for debugging
+// Debug commands
 window.debugGame = () => {
-    console.log('=== Brain Incremental Debug ===');
-    console.log('Money:', game.money);
-    console.log('Income/s:', game.getIncomePerSecond());
-    console.log('Upgrades:', UPGRADES.map(u => ({ name: u.name, owned: u.owned })));
+    console.log('=== Noxis Town Debug ===');
     console.log('Player position:', { x: game.player.x, y: game.player.y });
+    console.log('Current location:', game.world.currentLocation);
+    console.log('Camera position:', { x: game.camera.x, y: game.camera.y });
+    console.log('NPCs:', game.world.npcs.map(n => ({ 
+        id: n.id, 
+        x: n.x, 
+        y: n.y, 
+        wandering: n.isWandering 
+    })));
 };
 
-// Add money for testing
-window.addMoney = (amount) => {
-    game.money += amount;
-    console.log(`Added $${amount}. New total: $${game.money}`);
+// Teleport player for testing
+window.teleportPlayer = (x, y) => {
+    game.player.setPosition(x, y);
+    console.log(`Teleported to (${x}, ${y})`);
 };
 
-// Reset game
-window.resetGame = () => {
-    game.resetGame();
-};
-
-console.log('%cBrain Incremental', 'font-size: 20px; color: #8bac0f; font-weight: bold;');
-console.log('Debug commands: debugGame(), addMoney(amount), resetGame()');
+console.log('%cWelcome to Noxis Town', 'font-size: 20px; color: #8bac0f; font-weight: bold;');
+console.log('Debug commands: debugGame(), teleportPlayer(x, y)');

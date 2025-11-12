@@ -3,27 +3,20 @@ class Game {
     constructor() {
         this.canvas = document.getElementById('game-canvas');
         this.renderer = new Renderer(this.canvas);
+        this.camera = new Camera(CONFIG.WORLD_WIDTH, CONFIG.WORLD_HEIGHT);
         this.world = new World();
-        this.player = new Player(400, 350);
+        this.player = new Player(800, 800); // Start in center of town
         this.ui = new UIManager(this);
         
         // Game state
-        this.money = 0;
         this.isRunning = false;
         this.lastTime = 0;
-        this.lastIncomeTime = 0;
-        
-        // Load save
-        this.loadGame();
-        
-        // Setup income generation
-        this.setupIncomeGeneration();
+        this.usingCamera = true;
     }
 
     start() {
         this.isRunning = true;
         this.lastTime = performance.now();
-        this.lastIncomeTime = performance.now();
         this.canvas.classList.add('active');
         this.gameLoop();
     }
@@ -36,123 +29,134 @@ class Game {
         
         // Update
         if (!this.ui.isInputBlocked()) {
-            this.player.update(this.world);
+            // Update player movement
+            if (this.world.currentLocation === 'outside') {
+                this.player.update(this.world.map);
+                this.camera.follow(this.player);
+            } else {
+                // In interior, check collision with world
+                const newX = this.player.x;
+                const newY = this.player.y;
+                
+                let targetX = newX;
+                let targetY = newY;
+                
+                if (this.player.keys.up) targetY -= this.player.speed;
+                if (this.player.keys.down) targetY += this.player.speed;
+                if (this.player.keys.left) targetX -= this.player.speed;
+                if (this.player.keys.right) targetX += this.player.speed;
+                
+                if (!this.world.checkCollision(targetX, targetY, this.player.width, this.player.height)) {
+                    this.player.x = targetX;
+                    this.player.y = targetY;
+                } else {
+                    // Try sliding
+                    if (!this.world.checkCollision(targetX, newY, this.player.width, this.player.height)) {
+                        this.player.x = targetX;
+                    } else if (!this.world.checkCollision(newX, targetY, this.player.width, this.player.height)) {
+                        this.player.y = targetY;
+                    }
+                }
+            }
+            
+            // Update world (NPC wandering, etc.)
+            this.world.update(deltaTime);
+            
+            // Handle interactions
             this.handleInteractions();
         }
         
-        // Generate income
-        this.generateIncome(currentTime);
-        
         // Render
         this.render();
-        
-        // Update UI
-        this.ui.updateHUD();
         
         requestAnimationFrame((time) => this.gameLoop(time));
     }
 
     handleInteractions() {
         if (this.player.keys.interact) {
+            this.player.keys.interact = false;
+            
+            // Check for NPC interaction
             const npc = this.world.getNearbyNPC(this.player);
-            if (npc && !this.ui.isDialogActive) {
+            if (npc) {
                 const dialog = npc.interact();
                 this.ui.showDialog(dialog);
+                return;
             }
-            this.player.keys.interact = false;
+            
+            // Check for door interaction
+            const door = this.world.checkDoorInteraction(this.player);
+            if (door) {
+                if (door.isExit) {
+                    // Exit building
+                    this.transitionToOutside();
+                } else {
+                    // Enter building
+                    this.transitionToInterior(door.targetMap);
+                }
+                return;
+            }
         }
     }
 
-    setupIncomeGeneration() {
-        // Generate income every 100ms for smooth updates
-        setInterval(() => {
-            if (this.isRunning) {
-                const income = this.getIncomePerSecond() / 10;
-                this.money += income;
-                this.saveGame();
-            }
-        }, 100);
+    async transitionToInterior(interiorId) {
+        await this.ui.playTransition();
+        this.world.enterBuilding(interiorId, this.player);
+        this.usingCamera = false;
     }
 
-    generateIncome(currentTime) {
-        // This is called in the game loop but income is handled by interval
-        // We keep this for potential future use
-    }
-
-    getIncomePerSecond() {
-        let total = 0;
-        UPGRADES.forEach(upgrade => {
-            total += upgrade.baseIncome * upgrade.owned;
-        });
-        return total;
-    }
-
-    buyUpgrade(upgrade) {
-        const cost = this.ui.calculateCost(upgrade);
-        
-        if (this.money >= cost) {
-            this.money -= cost;
-            upgrade.owned++;
-            this.saveGame();
-            return true;
-        }
-        return false;
+    async transitionToOutside() {
+        await this.ui.playTransition();
+        this.world.exitBuilding(this.player);
+        this.camera.follow(this.player);
+        this.usingCamera = true;
     }
 
     render() {
         this.renderer.clear();
-        this.world.draw(this.renderer);
-        this.world.drawNPCs(this.renderer, this.player);
-        this.player.draw(this.renderer);
-    }
-
-    saveGame() {
-        const saveData = {
-            money: this.money,
-            upgrades: UPGRADES.map(u => ({ id: u.id, owned: u.owned })),
-            lastSave: Date.now()
-        };
-        localStorage.setItem('brainIncremental_save', JSON.stringify(saveData));
-    }
-
-    loadGame() {
-        const saveData = localStorage.getItem('brainIncremental_save');
         
-        if (saveData) {
-            try {
-                const data = JSON.parse(saveData);
-                this.money = data.money || 0;
-                
-                // Restore upgrade counts
-                if (data.upgrades) {
-                    data.upgrades.forEach(saved => {
-                        const upgrade = UPGRADES.find(u => u.id === saved.id);
-                        if (upgrade) {
-                            upgrade.owned = saved.owned;
-                        }
-                    });
-                }
-                
-                // Calculate offline earnings (max 8 hours)
-                if (data.lastSave) {
-                    const offlineTime = Math.min(Date.now() - data.lastSave, 8 * 60 * 60 * 1000);
-                    const offlineIncome = (this.getIncomePerSecond() * offlineTime) / 1000;
-                    
-                    if (offlineIncome > 0) {
-                        this.money += offlineIncome;
-                        console.log(`Welcome back! You earned $${Math.floor(offlineIncome)} while away!`);
-                    }
-                }
-            } catch (e) {
-                console.error('Failed to load save:', e);
+        if (this.world.currentLocation === 'outside') {
+            // Draw world with camera
+            this.world.draw(this.renderer, this.camera);
+            
+            // Draw player
+            this.player.draw(this.renderer, this.camera);
+            
+            // Draw interaction prompts
+            const npc = this.world.getNearbyNPC(this.player);
+            if (npc) {
+                const screenPos = this.camera.worldToScreen(npc.x, npc.y);
+                this.renderer.drawInteractionPrompt(screenPos.x, screenPos.y);
             }
-        }
-    }
-
-    resetGame() {
-        if (confirm('Are you sure you want to reset your progress?')) {
-            localStorage.removeItem('brainIncremental_save');
-            location.reload();
+            
+            // Check if near door
+            const door = this.world.checkDoorInteraction(this.player);
+            if (door && !door.isExit) {
+                const building = this.world.map.buildings.find(b => b.id + '_interior' === door.targetMap);
+                if (building) {
+                    const screenPos = this.camera.worldToScreen(building.doorX - 8, building.doorY - 20);
+                    this.renderer.drawInteractionPrompt(screenPos.x, screenPos.y);
+                }
+            }
+        } else {
+            // Draw interior
+            this.world.draw(this.renderer, null);
+            
+            // Draw player
+            this.player.drawInterior(this.renderer);
+            
+            // Draw interaction prompts
+            const npc = this.world.getNearbyNPC(this.player);
+            if (npc) {
+                this.renderer.drawInteractionPrompt(npc.x, npc.y);
+            }
+            
+            // Check if near exit
+            const door = this.world.checkDoorInteraction(this.player);
+            if (door && door.isExit) {
+                const exitDoor = this.world.currentInterior.exitDoor;
+                this.renderer.drawInteractionPrompt(exitDoor.x - 8, exitDoor.y - 20);
+            }
         }
     }
 }
