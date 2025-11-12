@@ -7,6 +7,25 @@ class Renderer {
         
         this.canvas.width = CONFIG.VIEWPORT_WIDTH;
         this.canvas.height = CONFIG.VIEWPORT_HEIGHT;
+        
+        // Load building sprites
+        this.buildingSprites = {};
+        this.loadBuildingSprites();
+    }
+
+    loadBuildingSprites() {
+        // Load house sprite
+        if (SPRITES.HOUSE_GREEN) {
+            const img = new Image();
+            img.onload = () => {
+                this.buildingSprites['HOUSE_GREEN'] = img;
+                console.log('House sprite loaded successfully');
+            };
+            img.onerror = () => {
+                console.warn('Failed to load house sprite, using drawn buildings');
+            };
+            img.src = SPRITES.HOUSE_GREEN;
+        }
     }
 
     clear() {
@@ -38,7 +57,19 @@ class Renderer {
         map.buildings.forEach(building => {
             if (camera.isVisible(building.x, building.y, building.width, building.height)) {
                 const screenPos = camera.worldToScreen(building.x, building.y);
-                this.drawBuilding(screenPos.x, screenPos.y, building.width, building.height, building.isLarge);
+                
+                // Try to use sprite if available, otherwise draw
+                if (building.spriteUrl && this.buildingSprites['HOUSE_GREEN']) {
+                    this.drawBuildingSprite(
+                        this.buildingSprites['HOUSE_GREEN'],
+                        screenPos.x,
+                        screenPos.y,
+                        building.width,
+                        building.height
+                    );
+                } else {
+                    this.drawBuilding(screenPos.x, screenPos.y, building.width, building.height, building.isLarge);
+                }
             }
         });
     }
@@ -115,6 +146,11 @@ class Renderer {
             this.ctx.fillStyle = CONFIG.COLORS.WATER_DARK;
             this.ctx.fillRect(x + 20, y + 20, 4, 4);
         }
+    }
+
+    drawBuildingSprite(sprite, x, y, width, height) {
+        // Draw the building sprite, scaling it to fit the building dimensions
+        this.ctx.drawImage(sprite, x, y, width, height);
     }
 
     drawBuilding(x, y, width, height, isLarge = false) {
@@ -261,8 +297,38 @@ class Renderer {
     }
 
     // Draw entities
+    drawAnimatedSprite(sprite, x, y, direction, frame) {
+        // Get the row based on direction
+        const row = SPRITE_CONFIG.DIRECTIONS[direction] || 0;
+        
+        // Calculate source position in the sprite sheet
+        const sourceX = frame * SPRITE_CONFIG.FRAME_WIDTH;
+        const sourceY = row * SPRITE_CONFIG.FRAME_HEIGHT;
+        
+        // Draw the specific frame from the sprite sheet
+        this.ctx.drawImage(
+            sprite,
+            sourceX, sourceY,  // Source x, y
+            SPRITE_CONFIG.FRAME_WIDTH, SPRITE_CONFIG.FRAME_HEIGHT,  // Source width, height
+            x, y,  // Destination x, y
+            SPRITE_CONFIG.FRAME_WIDTH, SPRITE_CONFIG.FRAME_HEIGHT   // Destination width, height
+        );
+        
+        // Optional: Add shadow under sprite
+        this.ctx.fillStyle = CONFIG.COLORS.SHADOW;
+        this.ctx.beginPath();
+        this.ctx.ellipse(
+            x + SPRITE_CONFIG.FRAME_WIDTH/2, 
+            y + SPRITE_CONFIG.FRAME_HEIGHT + 2, 
+            SPRITE_CONFIG.FRAME_WIDTH/3, 
+            SPRITE_CONFIG.FRAME_WIDTH/6, 
+            0, 0, Math.PI * 2
+        );
+        this.ctx.fill();
+    }
+
     drawSprite(sprite, x, y, width, height) {
-        // Draw sprite image
+        // Draw sprite image (full image, no animation)
         this.ctx.drawImage(sprite, x, y, width, height);
         
         // Optional: Add shadow under sprite

@@ -84,10 +84,28 @@ const TILE_TYPES = {
 // Sprite URLs
 const SPRITES = {
     NPC_01: 'https://raw.githubusercontent.com/FireSamaLab/BrainrotIncremental/main/Assets/NPC/NPC%2001.png',
-    // Add more sprite URLs here as needed
-    // NPC_02: 'url_here',
-    // NPC_03: 'url_here',
-    // NPC_04: 'url_here',
+    NPC_02: 'https://raw.githubusercontent.com/FireSamaLab/BrainrotIncremental/main/Assets/NPC/NPC%2002.png',
+    NPC_03: 'https://raw.githubusercontent.com/FireSamaLab/BrainrotIncremental/main/Assets/NPC/NPC%2003.png',
+    NPC_04: 'https://raw.githubusercontent.com/FireSamaLab/BrainrotIncremental/main/Assets/NPC/NPC%2004.png',
+    PLAYER: 'https://raw.githubusercontent.com/FireSamaLab/BrainrotIncremental/main/Assets/NPC/MAINCHARACTER.png',
+    HOUSE_GREEN: 'https://raw.githubusercontent.com/FireSamaLab/BrainrotIncremental/main/Assets/Building/House_Green.png',
+};
+
+// Sprite Animation Configuration  
+// Your sprite layout: Row 0=Down, Row 1=Left, Row 2=Right, Row 3=Up
+const SPRITE_CONFIG = {
+    FRAME_WIDTH: 32,
+    FRAME_HEIGHT: 48,  // Character is taller - was 32, now 48
+    FRAMES_PER_ROW: 3,
+    ANIMATION_SPEED: 150,
+    
+    // Direction to row mapping matches your sprite sheet perfectly
+    DIRECTIONS: {
+        down: 0,   // Row 0 = Down ✓
+        left: 1,   // Row 1 = Left ✓
+        right: 2,  // Row 2 = Right ✓
+        up: 3      // Row 3 = Up ✓
+    }
 };
 
 // NPC Dialogs
@@ -106,7 +124,7 @@ const NPC_DATA = {
     GREEN: {
         name: "Green Resident",
         color: CONFIG.COLORS.NPC_GREEN,
-        spriteUrl: null, // Will use colored dot until sprite is provided
+        spriteUrl: SPRITES.NPC_02,
         location: 'house2',
         dialogs: [
             "Hello there!|Nice to meet you.",
@@ -117,7 +135,7 @@ const NPC_DATA = {
     ORANGE: {
         name: "Orange Wanderer",
         color: CONFIG.COLORS.NPC_ORANGE,
-        spriteUrl: null, // Will use colored dot until sprite is provided
+        spriteUrl: SPRITES.NPC_03,
         location: 'outside',
         dialogs: [
             "I like to walk around town.|It helps me think.",
@@ -128,7 +146,7 @@ const NPC_DATA = {
     BLUE: {
         name: "Blue Wanderer",
         color: CONFIG.COLORS.NPC_BLUE,
-        spriteUrl: null, // Will use colored dot until sprite is provided
+        spriteUrl: SPRITES.NPC_04,
         location: 'outside',
         dialogs: [
             "Hello!|I'm just enjoying the day.",

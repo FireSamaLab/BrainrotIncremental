@@ -45,34 +45,53 @@ class GameMap {
         // Bottom border - trees
         if (y >= this.tilesTall - 2) return TILE_TYPES.TREE;
         
-        // Pond area (bottom left, around tile 8-15, 35-42)
-        if (x >= 8 && x <= 15 && y >= 35 && y <= 42) {
+        // Pond area (bottom left) - matches reference image position
+        if (x >= 3 && x <= 7 && y >= 28 && y <= 33) {
             return TILE_TYPES.WATER;
         }
         
-        // Main horizontal path (around row 24-26)
-        if (y >= 24 && y <= 26) {
+        // Main horizontal path through middle (connecting everything)
+        if (y >= 13 && y <= 15) {
             return TILE_TYPES.PATH;
         }
         
-        // Vertical paths to houses
-        // Path to house 1 (around column 15)
-        if (x >= 14 && x <= 16 && y >= 8 && y <= 24) {
+        // Path to House 1 (top left) - U shape
+        // Vertical part from main path
+        if (x >= 10 && x <= 11 && y >= 5 && y <= 13) {
+            return TILE_TYPES.PATH;
+        }
+        // Horizontal part at bottom of house to door
+        if (x >= 8 && x <= 11 && y >= 11 && y <= 12) {
             return TILE_TYPES.PATH;
         }
         
-        // Path to house 2 (around column 30)
-        if (x >= 29 && x <= 31 && y >= 8 && y <= 24) {
+        // Path to House 2 (top right) - U shape
+        // Vertical part from main path
+        if (x >= 20 && x <= 21 && y >= 5 && y <= 13) {
+            return TILE_TYPES.PATH;
+        }
+        // Horizontal part at bottom of house to door
+        if (x >= 18 && x <= 21 && y >= 11 && y <= 12) {
             return TILE_TYPES.PATH;
         }
         
-        // Path to your house (around column 38)
-        if (x >= 37 && x <= 39 && y >= 26 && y <= 38) {
+        // Path to Large Building (bottom center/left) - U shape
+        // Vertical part from main path
+        if (x >= 11 && x <= 12 && y >= 15 && y <= 16) {
+            return TILE_TYPES.PATH;
+        }
+        // Horizontal part at bottom of building to door
+        if (x >= 8 && x <= 12 && y >= 22 && y <= 23) {
             return TILE_TYPES.PATH;
         }
         
-        // Path to larger building (around column 28)
-        if (x >= 27 && x <= 29 && y >= 26 && y <= 38) {
+        // Path to Your House (bottom right) - U shape
+        // Vertical part from main path
+        if (x >= 20 && x <= 21 && y >= 15 && y <= 22) {
+            return TILE_TYPES.PATH;
+        }
+        // Horizontal part at bottom of house to door
+        if (x >= 18 && x <= 21 && y >= 27 && y <= 28) {
             return TILE_TYPES.PATH;
         }
         
@@ -82,46 +101,50 @@ class GameMap {
 
     createBuildings() {
         return [
-            // House 1 (top left)
+            // House 1 (top left) - like reference image
             {
                 id: 'house1',
-                x: 12 * this.tileSize,
-                y: 5 * this.tileSize,
-                width: 5 * this.tileSize,
+                x: 8 * this.tileSize,
+                y: 6 * this.tileSize,
+                width: 6 * this.tileSize,
                 height: 5 * this.tileSize,
-                doorX: 14.5 * this.tileSize,
-                doorY: 9.5 * this.tileSize
+                doorX: 10.5 * this.tileSize,
+                doorY: 10.5 * this.tileSize,
+                spriteUrl: SPRITES.HOUSE_GREEN
             },
-            // House 2 (top right)
+            // House 2 (top right) - like reference image
             {
                 id: 'house2',
-                x: 27 * this.tileSize,
-                y: 5 * this.tileSize,
-                width: 5 * this.tileSize,
+                x: 18 * this.tileSize,
+                y: 6 * this.tileSize,
+                width: 6 * this.tileSize,
                 height: 5 * this.tileSize,
-                doorX: 29.5 * this.tileSize,
-                doorY: 9.5 * this.tileSize
+                doorX: 20.5 * this.tileSize,
+                doorY: 10.5 * this.tileSize,
+                spriteUrl: SPRITES.HOUSE_GREEN
             },
-            // Your house (bottom right)
+            // Your house (bottom right) - smaller house
             {
                 id: 'house3',
-                x: 35 * this.tileSize,
-                y: 32 * this.tileSize,
+                x: 18 * this.tileSize,
+                y: 22 * this.tileSize,
                 width: 5 * this.tileSize,
                 height: 5 * this.tileSize,
-                doorX: 37.5 * this.tileSize,
-                doorY: 36.5 * this.tileSize
+                doorX: 20.5 * this.tileSize,
+                doorY: 26.5 * this.tileSize,
+                spriteUrl: SPRITES.HOUSE_GREEN
             },
-            // Large building (bottom middle)
+            // Large building (bottom center/left) - like the mart in reference
             {
                 id: 'building1',
-                x: 22 * this.tileSize,
-                y: 32 * this.tileSize,
-                width: 7 * this.tileSize,
-                height: 5 * this.tileSize,
-                doorX: 25.5 * this.tileSize,
-                doorY: 36.5 * this.tileSize,
-                isLarge: true
+                x: 8 * this.tileSize,
+                y: 16 * this.tileSize,
+                width: 8 * this.tileSize,
+                height: 6 * this.tileSize,
+                doorX: 11.5 * this.tileSize,
+                doorY: 21.5 * this.tileSize,
+                isLarge: true,
+                spriteUrl: SPRITES.HOUSE_GREEN // Using same sprite for now, can change later
             }
         ];
     }
@@ -206,7 +229,7 @@ class GameMap {
     }
 
     isSolid(x, y, width, height) {
-        // Check all corners and center
+        // Check tile collisions (trees, water)
         const points = [
             { x: x, y: y },
             { x: x + width, y: y },
@@ -217,12 +240,29 @@ class GameMap {
         
         for (let point of points) {
             const tile = this.getTileAt(point.x, point.y);
-            if (tile === TILE_TYPES.TREE || tile === TILE_TYPES.WATER || tile === TILE_TYPES.BUILDING) {
+            if (tile === TILE_TYPES.TREE || tile === TILE_TYPES.WATER) {
+                return true;
+            }
+        }
+        
+        // Check building collisions
+        for (let building of this.buildings) {
+            if (this.boxIntersect(
+                { x, y, width, height },
+                { x: building.x, y: building.y, width: building.width, height: building.height }
+            )) {
                 return true;
             }
         }
         
         return false;
+    }
+
+    boxIntersect(box1, box2) {
+        return box1.x < box2.x + box2.width &&
+               box1.x + box1.width > box2.x &&
+               box1.y < box2.y + box2.height &&
+               box1.y + box1.height > box2.y;
     }
 
     checkDoorCollision(x, y, width, height) {

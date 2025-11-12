@@ -3,10 +3,21 @@ class Player {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.width = CONFIG.PLAYER_SIZE;
-        this.height = CONFIG.PLAYER_SIZE;
+        this.width = SPRITE_CONFIG.FRAME_WIDTH;
+        this.height = SPRITE_CONFIG.FRAME_HEIGHT;
         this.speed = CONFIG.PLAYER_SPEED;
         this.color = CONFIG.COLORS.PLAYER;
+        
+        // Direction and animation
+        this.direction = 'down';
+        this.isMoving = false;
+        this.currentFrame = 1; // Start with middle frame (standing pose)
+        this.frameTimer = 0;
+        
+        // Sprite handling
+        this.sprite = null;
+        this.spriteLoaded = false;
+        this.loadSprite();
         
         this.keys = {
             up: false,
@@ -19,27 +30,46 @@ class Player {
         this.setupControls();
     }
 
+    loadSprite() {
+        if (!SPRITES.PLAYER) return;
+        
+        this.sprite = new Image();
+        this.sprite.onload = () => {
+            this.spriteLoaded = true;
+            console.log('Player sprite loaded successfully');
+        };
+        this.sprite.onerror = () => {
+            console.warn('Failed to load player sprite, using red dot instead');
+            this.spriteLoaded = false;
+        };
+        this.sprite.src = SPRITES.PLAYER;
+    }
+
     setupControls() {
         window.addEventListener('keydown', (e) => {
             switch(e.key.toLowerCase()) {
                 case 'arrowup':
                 case 'w':
                     this.keys.up = true;
+                    this.direction = 'up';
                     e.preventDefault();
                     break;
                 case 'arrowdown':
                 case 's':
                     this.keys.down = true;
+                    this.direction = 'down';
                     e.preventDefault();
                     break;
                 case 'arrowleft':
                 case 'a':
                     this.keys.left = true;
+                    this.direction = 'left';
                     e.preventDefault();
                     break;
                 case 'arrowright':
                 case 'd':
                     this.keys.right = true;
+                    this.direction = 'right';
                     e.preventDefault();
                     break;
                 case ' ':
@@ -76,21 +106,43 @@ class Player {
         });
     }
 
-    update(map) {
+    update(map, deltaTime) {
         let newX = this.x;
         let newY = this.y;
+        this.isMoving = false;
 
         if (this.keys.up) {
             newY -= this.speed;
+            this.isMoving = true;
+            this.direction = 'up';
         }
         if (this.keys.down) {
             newY += this.speed;
+            this.isMoving = true;
+            this.direction = 'down';
         }
         if (this.keys.left) {
             newX -= this.speed;
+            this.isMoving = true;
+            this.direction = 'left';
         }
         if (this.keys.right) {
             newX += this.speed;
+            this.isMoving = true;
+            this.direction = 'right';
+        }
+
+        // Update animation
+        if (this.isMoving) {
+            this.frameTimer += deltaTime;
+            if (this.frameTimer >= SPRITE_CONFIG.ANIMATION_SPEED) {
+                this.currentFrame = (this.currentFrame + 1) % SPRITE_CONFIG.FRAMES_PER_ROW;
+                this.frameTimer = 0;
+            }
+        } else {
+            // Reset to standing frame when not moving
+            this.currentFrame = 1; // Middle frame is usually the standing pose
+            this.frameTimer = 0;
         }
 
         // Check collision with map
@@ -103,6 +155,8 @@ class Player {
                 this.x = newX;
             } else if (!map.isSolid(this.x, newY, this.width, this.height)) {
                 this.y = newY;
+            } else {
+                this.isMoving = false;
             }
         }
 
@@ -113,12 +167,33 @@ class Player {
 
     draw(renderer, camera) {
         const screenPos = camera.worldToScreen(this.x, this.y);
-        renderer.drawDot(screenPos.x, screenPos.y, this.color, this.width);
+        
+        if (this.spriteLoaded && this.sprite) {
+            renderer.drawAnimatedSprite(
+                this.sprite,
+                screenPos.x,
+                screenPos.y,
+                this.direction,
+                this.currentFrame
+            );
+        } else {
+            renderer.drawDot(screenPos.x, screenPos.y, this.color, CONFIG.PLAYER_SIZE);
+        }
     }
 
     drawInterior(renderer) {
         // When in interior, draw at fixed position
-        renderer.drawDot(this.x, this.y, this.color, this.width);
+        if (this.spriteLoaded && this.sprite) {
+            renderer.drawAnimatedSprite(
+                this.sprite,
+                this.x,
+                this.y,
+                this.direction,
+                this.currentFrame
+            );
+        } else {
+            renderer.drawDot(this.x, this.y, this.color, CONFIG.PLAYER_SIZE);
+        }
     }
 
     setPosition(x, y) {

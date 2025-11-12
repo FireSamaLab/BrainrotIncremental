@@ -12,17 +12,17 @@ class World {
     createNPCs() {
         const npcs = [];
         
-        // Yellow - in house 1
+        // Yellow - in house 1 (top left)
         npcs.push(new NPC('YELLOW', 200, 150, NPC_DATA.YELLOW));
         
-        // Green - in house 2
+        // Green - in house 2 (top right)
         npcs.push(new NPC('GREEN', 200, 150, NPC_DATA.GREEN));
         
-        // Orange - wandering outside
-        npcs.push(new NPC('ORANGE', 600, 800, NPC_DATA.ORANGE));
+        // Orange - wandering outside (starts near large building)
+        npcs.push(new NPC('ORANGE', 380, 580, NPC_DATA.ORANGE));
         
-        // Blue - wandering outside
-        npcs.push(new NPC('BLUE', 900, 600, NPC_DATA.BLUE));
+        // Blue - wandering outside (starts near pond)
+        npcs.push(new NPC('BLUE', 200, 950, NPC_DATA.BLUE));
         
         return npcs;
     }

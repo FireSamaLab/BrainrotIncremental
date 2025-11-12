@@ -5,7 +5,7 @@ class Game {
         this.renderer = new Renderer(this.canvas);
         this.camera = new Camera(CONFIG.WORLD_WIDTH, CONFIG.WORLD_HEIGHT);
         this.world = new World();
-        this.player = new Player(800, 800); // Start in center of town
+        this.player = new Player(450, 450); // Start in center of town
         this.ui = new UIManager(this);
         
         // Game state
@@ -31,7 +31,7 @@ class Game {
         if (!this.ui.isInputBlocked()) {
             // Update player movement
             if (this.world.currentLocation === 'outside') {
-                this.player.update(this.world.map);
+                this.player.update(this.world.map, deltaTime);
                 this.camera.follow(this.player);
             } else {
                 // In interior, check collision with world
@@ -40,11 +40,40 @@ class Game {
                 
                 let targetX = newX;
                 let targetY = newY;
+                this.player.isMoving = false;
                 
-                if (this.player.keys.up) targetY -= this.player.speed;
-                if (this.player.keys.down) targetY += this.player.speed;
-                if (this.player.keys.left) targetX -= this.player.speed;
-                if (this.player.keys.right) targetX += this.player.speed;
+                if (this.player.keys.up) {
+                    targetY -= this.player.speed;
+                    this.player.isMoving = true;
+                    this.player.direction = 'up';
+                }
+                if (this.player.keys.down) {
+                    targetY += this.player.speed;
+                    this.player.isMoving = true;
+                    this.player.direction = 'down';
+                }
+                if (this.player.keys.left) {
+                    targetX -= this.player.speed;
+                    this.player.isMoving = true;
+                    this.player.direction = 'left';
+                }
+                if (this.player.keys.right) {
+                    targetX += this.player.speed;
+                    this.player.isMoving = true;
+                    this.player.direction = 'right';
+                }
+                
+                // Update animation
+                if (this.player.isMoving) {
+                    this.player.frameTimer += deltaTime;
+                    if (this.player.frameTimer >= SPRITE_CONFIG.ANIMATION_SPEED) {
+                        this.player.currentFrame = (this.player.currentFrame + 1) % SPRITE_CONFIG.FRAMES_PER_ROW;
+                        this.player.frameTimer = 0;
+                    }
+                } else {
+                    this.player.currentFrame = 1;
+                    this.player.frameTimer = 0;
+                }
                 
                 if (!this.world.checkCollision(targetX, targetY, this.player.width, this.player.height)) {
                     this.player.x = targetX;
@@ -55,6 +84,8 @@ class Game {
                         this.player.x = targetX;
                     } else if (!this.world.checkCollision(newX, targetY, this.player.width, this.player.height)) {
                         this.player.y = targetY;
+                    } else {
+                        this.player.isMoving = false;
                     }
                 }
             }

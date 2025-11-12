@@ -4,13 +4,19 @@ class NPC {
         this.id = id;
         this.x = x;
         this.y = y;
-        this.width = CONFIG.NPC_SIZE;
-        this.height = CONFIG.NPC_SIZE;
+        this.width = SPRITE_CONFIG.FRAME_WIDTH;
+        this.height = SPRITE_CONFIG.FRAME_HEIGHT;
         this.name = data.name;
         this.color = data.color;
         this.location = data.location;
         this.dialogs = data.dialogs;
         this.currentDialogIndex = 0;
+        
+        // Direction and animation
+        this.direction = 'down';
+        this.isMoving = false;
+        this.currentFrame = 1; // Standing frame
+        this.frameTimer = 0;
         
         // Sprite handling
         this.spriteUrl = data.spriteUrl;
@@ -40,9 +46,7 @@ class NPC {
         this.sprite = new Image();
         this.sprite.onload = () => {
             this.spriteLoaded = true;
-            // Adjust NPC size based on sprite dimensions
-            this.width = this.sprite.width;
-            this.height = this.sprite.height;
+            console.log(`${this.id} sprite loaded successfully`);
         };
         this.sprite.onerror = () => {
             console.warn(`Failed to load sprite for ${this.id}, using colored dot instead`);
@@ -59,19 +63,36 @@ class NPC {
         if (this.wanderTimer <= 0) {
             // Pick a new random direction
             const directions = [
-                { x: 0, y: -1 },  // Up
-                { x: 0, y: 1 },   // Down
-                { x: -1, y: 0 },  // Left
-                { x: 1, y: 0 },   // Right
-                { x: 0, y: 0 }    // Pause
+                { x: 0, y: -1, dir: 'up' },
+                { x: 0, y: 1, dir: 'down' },
+                { x: -1, y: 0, dir: 'left' },
+                { x: 1, y: 0, dir: 'right' },
+                { x: 0, y: 0, dir: this.direction }  // Pause, keep current direction
             ];
             
-            this.wanderDirection = directions[Math.floor(Math.random() * directions.length)];
+            const chosen = directions[Math.floor(Math.random() * directions.length)];
+            this.wanderDirection = { x: chosen.x, y: chosen.y };
+            this.direction = chosen.dir;
             this.wanderTimer = this.wanderPause + Math.random() * 1000;
         }
         
+        // Determine if moving
+        this.isMoving = (this.wanderDirection.x !== 0 || this.wanderDirection.y !== 0);
+        
+        // Update animation
+        if (this.isMoving) {
+            this.frameTimer += deltaTime;
+            if (this.frameTimer >= SPRITE_CONFIG.ANIMATION_SPEED) {
+                this.currentFrame = (this.currentFrame + 1) % SPRITE_CONFIG.FRAMES_PER_ROW;
+                this.frameTimer = 0;
+            }
+        } else {
+            this.currentFrame = 1; // Standing frame
+            this.frameTimer = 0;
+        }
+        
         // Move in wander direction
-        if (this.wanderDirection.x !== 0 || this.wanderDirection.y !== 0) {
+        if (this.isMoving) {
             const newX = this.x + this.wanderDirection.x * this.speed;
             const newY = this.y + this.wanderDirection.y * this.speed;
             
@@ -84,6 +105,7 @@ class NPC {
             } else {
                 // Hit obstacle, pick new direction immediately
                 this.wanderTimer = 0;
+                this.isMoving = false;
             }
         }
     }
@@ -110,7 +132,13 @@ class NPC {
             const screenPos = camera.worldToScreen(this.x, this.y);
             
             if (this.spriteLoaded && this.sprite) {
-                renderer.drawSprite(this.sprite, screenPos.x, screenPos.y, this.width, this.height);
+                renderer.drawAnimatedSprite(
+                    this.sprite,
+                    screenPos.x,
+                    screenPos.y,
+                    this.direction,
+                    this.currentFrame
+                );
             } else {
                 renderer.drawDot(screenPos.x, screenPos.y, this.color, CONFIG.NPC_SIZE);
             }
@@ -121,7 +149,13 @@ class NPC {
         } else {
             // Draw in local space (interior)
             if (this.spriteLoaded && this.sprite) {
-                renderer.drawSprite(this.sprite, this.x, this.y, this.width, this.height);
+                renderer.drawAnimatedSprite(
+                    this.sprite,
+                    this.x,
+                    this.y,
+                    this.direction,
+                    this.currentFrame
+                );
             } else {
                 renderer.drawDot(this.x, this.y, this.color, CONFIG.NPC_SIZE);
             }
